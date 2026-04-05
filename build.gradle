@@ -1,4 +1,3 @@
-// Top-level build file
 buildscript {
     repositories {
         google()
@@ -9,15 +8,9 @@ buildscript {
     }
 }
 
-apply plugin: 'com.android.application'
-
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }

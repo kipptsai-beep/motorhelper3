@@ -2,23 +2,22 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.motohelper.app'
-    compileSdk 34
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "com.motohelper.app"
-        minSdk 22
-        targetSdk 34
+        minSdkVersion 22
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0.0"
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
         debug {
             debuggable true
+        }
+        release {
+            minifyEnabled false
         }
     }
 
@@ -28,13 +27,7 @@ android {
     }
 }
 
-repositories {
-    google()
-    mavenCentral()
-}
-
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.webkit:webkit:1.9.0'
-    implementation 'com.google.android.material:material:1.11.0'
 }

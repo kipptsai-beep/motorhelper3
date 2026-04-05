@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.motohelper.app'
-    compileSdkVersion 34
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.motohelper.app"
-        minSdkVersion 22
-        targetSdkVersion 34
+        minSdk 22
+        targetSdk 34
         versionCode 1
         versionName "1.0.0"
     }
@@ -37,5 +37,4 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.webkit:webkit:1.9.0'
     implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
 }

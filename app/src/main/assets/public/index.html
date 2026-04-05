@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>機車小幫手</title>
+<style>
+  :root {
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --orange: #f97316;
+    --red: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --white: #ffffff;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; background: var(--gray-100); min-height: 100vh; }
+
+  /* HEADER - compact */
+  .header {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    padding: 8px 14px 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+  }
+  .header-left .app-name { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-left .cloud-status { font-size: 10px; opacity: 0.85; margin-top: 1px; }
+  .header-right .total-label { font-size: 10px; opacity: 0.85; text-align: right; }
+  .header-right .total-amount { font-size: 18px; font-weight: 800; }
+
+  /* TABS */
+  .tabs { display: flex; background: white; border-bottom: 1px solid var(--gray-200); position: sticky; top: 54px; z-index: 99; }
+  .tab { flex: 1; text-align: center; padding: 10px 0 8px; font-size: 14px; color: var(--gray-500); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; font-weight: 500; }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+
+  /* CONTENT */
+  .page { display: none; padding: 12px; }
+  .page.active { display: block; }
+
+  /* CARD */
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin-bottom: 12px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--gray-800); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  /* AVG FUEL */
+  .avg-fuel { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .avg-fuel .fuel-icon { font-size: 20px; }
+  .avg-fuel .fuel-text { font-size: 13px; color: var(--gray-600); }
+  .avg-fuel .fuel-value { font-size: 22px; font-weight: 800; color: var(--blue); }
+  .avg-fuel .fuel-unit { font-size: 13px; color: var(--gray-500); font-weight: 600; }
+
+  /* FORM */
+  .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .form-group { flex: 1; }
+  .form-label { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; font-weight: 500; }
+  .form-input { width: 100%; border: 1px solid var(--gray-200); border-radius: 8px; padding: 9px 11px; font-size: 14px; color: var(--gray-800); background: var(--gray-50); outline: none; transition: border .2s; }
+  .form-input:focus { border-color: var(--blue); background: white; }
+  .form-input::placeholder { color: var(--gray-300); }
+
+  /* BUTTON GROUP */
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .btn-option { padding: 7px 12px; border-radius: 20px; border: 1.5px solid var(--gray-200); background: white; font-size: 13px; color: var(--gray-600); cursor: pointer; transition: all .15s; font-weight: 500; }
+  .btn-option.active { background: var(--blue); border-color: var(--blue); color: white; }
+  .btn-option.active-green { background: var(--green); border-color: var(--green); color: white; }
+
+  /* SAVE BUTTON */
+  .btn-save { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: white; margin-top: 4px; }
+  .btn-save.blue { background: var(--blue); }
+  .btn-save.green { background: var(--green); }
+  .btn-save:active { opacity: 0.85; transform: scale(0.99); }
+
+  /* RECORD ITEM */
+  .record-item { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; margin-bottom: 10px; }
+  .record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .record-date { font-size: 12px; color: var(--gray-400); font-weight: 500; }
+  .record-km { font-size: 12px; font-weight: 700; color: var(--blue); background: #eff6ff; padding: 2px 7px; border-radius: 10px; }
+  .record-km.maint { color: var(--green); background: #f0fdf4; }
+  .record-amount { font-size: 17px; font-weight: 800; color: var(--gray-800); }
+  .record-detail { font-size: 13px; color: var(--gray-600); margin-bottom: 3px; }
+  .record-note { font-size: 12px; color: var(--gray-400); font-style: italic; margin-top: 4px; }
+  .record-fuel-badge { display: inline-block; font-size: 11px; background: #fef3c7; color: #92400e; border-radius: 8px; padding: 2px 7px; margin-top: 4px; font-weight: 600; }
+  .record-actions { display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gray-100); }
+  .btn-edit { flex: 1; padding: 7px; border-radius: 8px; border: 1.5px solid var(--blue); background: white; color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-delete { flex: 1; padding: 7px; border-radius: 8px; border: 1.5px solid var(--red); background: white; color: var(--red); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-edit:active { background: var(--blue); color: white; }
+  .btn-delete:active { background: var(--red); color: white; }
+
+  /* BACKUP */
+  .backup-cloud { text-align: center; padding: 20px 10px; }
+  .cloud-icon { font-size: 48px; margin-bottom: 8px; }
+  .cloud-id { font-size: 11px; color: var(--gray-400); margin-bottom: 18px; word-break: break-all; }
+  .btn-export { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; background: var(--blue); color: white; margin-bottom: 10px; }
+  .btn-import { width: 100%; padding: 13px; border-radius: 10px; border: 2px solid var(--orange); background: white; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--orange); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 14px; padding: 18px; width: calc(100% - 32px); max-width: 400px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+  .btn-cancel { flex: 1; padding: 11px; border-radius: 8px; border: 1.5px solid var(--gray-300); background: white; font-size: 14px; font-weight: 600; color: var(--gray-600); cursor: pointer; }
+  .btn-confirm { flex: 1; padding: 11px; border-radius: 8px; border: none; background: var(--blue); color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  /* CONFIRM DIALOG */
+  .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; align-items: center; justify-content: center; }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box { background: white; border-radius: 14px; padding: 22px 18px; width: calc(100% - 60px); max-width: 320px; text-align: center; }
+  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--gray-800); }
+  .confirm-msg { font-size: 13px; color: var(--gray-500); margin-bottom: 18px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-btn-no { flex: 1; padding: 11px; border-radius: 8px; border: 1.5px solid var(--gray-300); background: white; font-size: 14px; font-weight: 600; color: var(--gray-600); cursor: pointer; }
+  .confirm-btn-yes { flex: 1; padding: 11px; border-radius: 8px; border: none; background: var(--red); color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  .section-divider { height: 1px; background: var(--gray-100); margin: 10px 0; }
+  .records-header { font-size: 13px; font-weight: 700; color: var(--gray-500); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .empty-state { text-align: center; color: var(--gray-300); font-size: 14px; padding: 30px 0; }
+  .edit-mode-banner { background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #92400e; font-weight: 600; display: none; }
+  .edit-mode-banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="app-name">🏍️ 機車小幫手</div>
+    <div class="cloud-status" id="cloudStatus">☁️ 雲端資料同步中</div>
+  </div>
+  <div class="header-right">
+    <div class="total-label">總支出累計</div>
+    <div class="total-amount" id="totalAmount">$ 0</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('fuel')">加油</div>
+  <div class="tab" onclick="switchTab('maint')">保養</div>
+  <div class="tab" onclick="switchTab('backup')">備份</div>
+</div>
+
+<!-- FUEL PAGE -->
+<div class="page active" id="page-fuel">
+  <div class="avg-fuel">
+    <span class="fuel-icon">⛽</span>
+    <span class="fuel-text">總平均油耗</span>
+    <span class="fuel-value" id="avgFuelDisplay">--</span>
+    <span class="fuel-unit">km/L</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⛽ 新增加油紀錄</div>
+    <div class="edit-mode-banner" id="fuelEditBanner">✏️ 修改模式：正在編輯第 <span id="fuelEditIndex"></span> 筆資料</div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input class="form-input" type="date" id="fuelDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">累積里程 (km)</div>
+        <input class="form-input" type="number" id="fuelKm" placeholder="目前里程">
+      </div>
+    </div>
+    <div class="form-label" style="margin-bottom:6px;">加油站</div>
+    <div class="btn-group" id="stationGroup">
+      <div class="btn-option active" onclick="selectStation(this,'台灣中油')">台灣中油</div>
+      <div class="btn-option" onclick="selectStation(this,'台塑石油')">台塑石油</div>
+    </div>
+    <div class="form-label" style="margin-bottom:6px;">油品</div>
+    <div class="btn-group" id="oilTypeGroup">
+      <div class="btn-option" onclick="selectOilType(this,'92無鉛')">92無鉛</div>
+      <div class="btn-option active" onclick="selectOilType(this,'95無鉛')">95無鉛</div>
+      <div class="btn-option" onclick="selectOilType(this,'98無鉛')">98無鉛</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">油量 (L)</div>
+        <input class="form-input" type="number" step="0.01" id="fuelLiter" placeholder="公升">
+      </div>
+      <div class="form-group">
+        <div class="form-label">單價 ($/L)</div>
+        <input class="form-input" type="number" step="0.01" id="fuelPrice" placeholder="單價">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">總金額 ($)</div>
+      <input class="form-input" type="number" id="fuelTotal" placeholder="金額">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">備註</div>
+      <input class="form-input" type="text" id="fuelNote" placeholder="例如：自助加油">
+    </div>
+    <button class="btn-save blue" id="fuelSaveBtn" onclick="saveFuel()">儲存紀錄</button>
+    <button class="btn-cancel" id="fuelCancelEdit" style="width:100%;margin-top:8px;display:none;" onclick="cancelFuelEdit()">取消修改</button>
+  </div>
+
+  <div class="records-header">加油紀錄</div>
+  <div id="fuelRecords"></div>
+</div>
+
+<!-- MAINT PAGE -->
+<div class="page" id="page-maint">
+  <div class="card">
+    <div class="card-title">🔧 新增保養紀錄</div>
+    <div class="edit-mode-banner" id="maintEditBanner">✏️ 修改模式：正在編輯第 <span id="maintEditIndex"></span> 筆資料</div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input class="form-input" type="date" id="maintDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">累積里程 (km)</div>
+        <input class="form-input" type="number" id="maintKm" placeholder="目前里程">
+      </div>
+    </div>
+    <div class="form-label" style="margin-bottom:6px;">快速選擇項目</div>
+    <div class="btn-group" id="maintTypeGroup">
+      <div class="btn-option" onclick="toggleMaintType(this,'機油')">機油</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'齒輪油')">齒輪油</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'空濾')">空濾</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'輪胎')">輪胎</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'煞車皮')">煞車皮</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'電瓶')">電瓶</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'洗車')">洗車</div>
+      <div class="btn-option" onclick="toggleMaintType(this,'其他')">其他</div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">保養項目名稱</div>
+      <input class="form-input" type="text" id="maintItem" placeholder="輸入或選取上方項目">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">費用 ($)</div>
+      <input class="form-input" type="number" id="maintCost" placeholder="金額">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">備註</div>
+      <input class="form-input" type="text" id="maintNote" placeholder="備註內容">
+    </div>
+    <button class="btn-save green" onclick="saveMaint()">儲存紀錄</button>
+    <button class="btn-cancel" id="maintCancelEdit" style="width:100%;margin-top:8px;display:none;" onclick="cancelMaintEdit()">取消修改</button>
+  </div>
+
+  <div class="records-header">保養紀錄</div>
+  <div id="maintRecords"></div>
+</div>
+
+<!-- BACKUP PAGE -->
+<div class="page" id="page-backup">
+  <div class="card">
+    <div class="backup-cloud">
+      <div class="cloud-icon">☁️</div>
+      <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:6px;">雲端資料同步中</div>
+      <div class="cloud-id">214051E11CCA46D4948D0DB97AC5FFC3</div>
+      <button class="btn-export" onclick="exportCSV()">匯出試算表 (CSV)</button>
+      <label style="display:block;">
+        <input type="file" accept=".csv" id="importFile" style="display:none" onchange="importCSV(event)">
+        <div class="btn-import" onclick="document.getElementById('importFile').click()">從檔案還原（導入）</div>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT FUEL MODAL -->
+<div class="modal-overlay" id="fuelModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 修改加油紀錄</div>
+    <input type="hidden" id="editFuelIdx">
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input class="form-input" type="date" id="editFuelDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">里程 (km)</div>
+        <input class="form-input" type="number" id="editFuelKm">
+      </div>
+    </div>
+    <div class="form-label" style="margin-bottom:6px;">加油站</div>
+    <div class="btn-group" id="editStationGroup">
+      <div class="btn-option" onclick="selectEditStation(this,'台灣中油')">台灣中油</div>
+      <div class="btn-option" onclick="selectEditStation(this,'台塑石油')">台塑石油</div>
+    </div>
+    <div class="form-label" style="margin-bottom:6px;">油品</div>
+    <div class="btn-group" id="editOilGroup">
+      <div class="btn-option" onclick="selectEditOil(this,'92無鉛')">92無鉛</div>
+      <div class="btn-option" onclick="selectEditOil(this,'95無鉛')">95無鉛</div>
+      <div class="btn-option" onclick="selectEditOil(this,'98無鉛')">98無鉛</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">油量 (L)</div>
+        <input class="form-input" type="number" step="0.01" id="editFuelLiter">
+      </div>
+      <div class="form-group">
+        <div class="form-label">單價 ($/L)</div>
+        <input class="form-input" type="number" step="0.01" id="editFuelPrice">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">總金額 ($)</div>
+      <input class="form-input" type="number" id="editFuelTotal">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">備註</div>
+      <input class="form-input" type="text" id="editFuelNote">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFuelModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmEditFuel()">確認修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MAINT MODAL -->
+<div class="modal-overlay" id="maintModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 修改保養紀錄</div>
+    <input type="hidden" id="editMaintIdx">
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input class="form-input" type="date" id="editMaintDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">里程 (km)</div>
+        <input class="form-input" type="number" id="editMaintKm">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">保養項目</div>
+      <input class="form-input" type="text" id="editMaintItem">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">費用 ($)</div>
+      <input class="form-input" type="number" id="editMaintCost">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <div class="form-label">備註</div>
+      <input class="form-input" type="text" id="editMaintNote">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMaintModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmEditMaint()">確認修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">⚠️ 確認刪除</div>
+    <div class="confirm-msg" id="confirmMsg">確定要刪除這筆紀錄嗎？此操作無法復原。</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-no" onclick="closeConfirm()">取消</button>
+      <button class="confirm-btn-yes" onclick="doDelete()">刪除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== STORAGE KEY ==========
+const CLOUD_KEY = '214051E11CCA46D4948D0DB97AC5FFC3';
+const FUEL_KEY = 'moto_fuel_' + CLOUD_KEY;
+const MAINT_KEY = 'moto_maint_' + CLOUD_KEY;
+
+// ========== STATE ==========
+let fuelRecords = [];
+let maintRecords = [];
+let pendingDeleteType = null;
+let pendingDeleteIdx = null;
+let selectedStation = '台灣中油';
+let selectedOilType = '95無鉛';
+let editFuelStation = '台灣中油';
+let editFuelOil = '95無鉛';
+
+// ========== INIT ==========
+window.onload = function() {
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('fuelDate').value = today;
+  document.getElementById('maintDate').value = today;
+  loadData();
+  updateTotal();
+  renderFuel();
+  renderMaint();
+};
+
+function loadData() {
+  try {
+    fuelRecords = JSON.parse(localStorage.getItem(FUEL_KEY) || '[]');
+    maintRecords = JSON.parse(localStorage.getItem(MAINT_KEY) || '[]');
+  } catch(e) { fuelRecords = []; maintRecords = []; }
+}
+
+function saveData() {
+  localStorage.setItem(FUEL_KEY, JSON.stringify(fuelRecords));
+  localStorage.setItem(MAINT_KEY, JSON.stringify(maintRecords));
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  fuelRecords.forEach(r => total += (parseFloat(r.total) || 0));
+  maintRecords.forEach(r => total += (parseFloat(r.cost) || 0));
+  document.getElementById('totalAmount').textContent = '$ ' + total.toLocaleString();
+}
+
+// ========== TAB ==========
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['fuel','maint','backup'][i] === tab);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+}
+
+// ========== FUEL ==========
+function selectStation(el, val) {
+  document.querySelectorAll('#stationGroup .btn-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedStation = val;
+}
+function selectOilType(el, val) {
+  document.querySelectorAll('#oilTypeGroup .btn-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedOilType = val;
+}
+
+function saveFuel() {
+  const date = document.getElementById('fuelDate').value;
+  const km = document.getElementById('fuelKm').value;
+  const liter = document.getElementById('fuelLiter').value;
+  const price = document.getElementById('fuelPrice').value;
+  const total = document.getElementById('fuelTotal').value;
+  const note = document.getElementById('fuelNote').value;
+  if (!date || !km || !total) { alert('請填寫日期、里程和總金額'); return; }
+
+  const rec = { date, km: parseFloat(km), station: selectedStation, oilType: selectedOilType, liter: parseFloat(liter)||0, price: parseFloat(price)||0, total: parseFloat(total)||0, note };
+
+  // Check edit mode
+  const editIdx = document.getElementById('fuelSaveBtn').dataset.editIdx;
+  if (editIdx !== undefined && editIdx !== '') {
+    fuelRecords[parseInt(editIdx)] = rec;
+    document.getElementById('fuelSaveBtn').dataset.editIdx = '';
+    document.getElementById('fuelEditBanner').classList.remove('show');
+    document.getElementById('fuelCancelEdit').style.display = 'none';
+    document.getElementById('fuelSaveBtn').textContent = '儲存紀錄';
+  } else {
+    fuelRecords.unshift(rec);
+  }
+
+  saveData();
+  clearFuelForm();
+  renderFuel();
+}
+
+function clearFuelForm() {
+  document.getElementById('fuelKm').value = '';
+  document.getElementById('fuelLiter').value = '';
+  document.getElementById('fuelPrice').value = '';
+  document.getElementById('fuelTotal').value = '';
+  document.getElementById('fuelNote').value = '';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('fuelDate').value = today;
+}
+
+function cancelFuelEdit() {
+  document.getElementById('fuelSaveBtn').dataset.editIdx = '';
+  document.getElementById('fuelEditBanner').classList.remove('show');
+  document.getElementById('fuelCancelEdit').style.display = 'none';
+  document.getElementById('fuelSaveBtn').textContent = '儲存紀錄';
+  clearFuelForm();
+}
+
+function renderFuel() {
+  // Compute per-record fuel efficiency
+  // Sort by km desc for display, compute efficiency between consecutive records
+  const sorted = [...fuelRecords].sort((a,b) => b.km - a.km);
+  
+  // For each record, find next lower km record to compute efficiency
+  function getEfficiency(rec, allRecs) {
+    if (!rec.liter || rec.liter <= 0) return null;
+    // Find previous record (lower km)
+    const prev = allRecs.filter(r => r.km < rec.km).sort((a,b) => b.km - a.km)[0];
+    if (!prev) return null;
+    const dist = rec.km - prev.km;
+    if (dist <= 0) return null;
+    return (dist / rec.liter).toFixed(2);
+  }
+
+  // Compute overall avg
+  let totalLiter = 0, totalDist = 0;
+  const kms = fuelRecords.map(r => r.km).filter(k => k > 0);
+  if (kms.length >= 2 && fuelRecords.reduce((s,r)=>s+(r.liter||0),0) > 0) {
+    const maxKm = Math.max(...kms), minKm = Math.min(...kms);
+    totalDist = maxKm - minKm;
+    totalLiter = fuelRecords.reduce((s,r) => s + (r.liter || 0), 0);
+    const lastRec = fuelRecords.find(r => r.km === maxKm);
+    const firstRec = fuelRecords.find(r => r.km === minKm);
+    // Subtract first refill liter since we don't know how full the tank was
+    const firstLiter = firstRec ? (firstRec.liter || 0) : 0;
+    const usedLiter = totalLiter - firstLiter;
+    const avg = usedLiter > 0 ? (totalDist / usedLiter).toFixed(2) : '--';
+    document.getElementById('avgFuelDisplay').textContent = avg;
+  } else if (fuelRecords.length === 1) {
+    document.getElementById('avgFuelDisplay').textContent = '--';
+  } else {
+    document.getElementById('avgFuelDisplay').textContent = '--';
+  }
+
+  const container = document.getElementById('fuelRecords');
+  if (fuelRecords.length === 0) {
+    container.innerHTML = '<div class="empty-state">尚無加油紀錄</div>';
+    return;
+  }
+
+  container.innerHTML = fuelRecords.map((r, i) => {
+    const eff = getEfficiency(r, fuelRecords);
+    const effBadge = eff ? `<span class="record-fuel-badge">⛽ ${eff} km/L</span>` : '';
+    const noteHtml = r.note ? `<div class="record-note">📝 ${r.note}</div>` : '';
+    return `<div class="record-item">
+      <div class="record-header">
+        <span class="record-date">${r.date}</span>
+        <span class="record-km">${r.km ? r.km.toLocaleString() + ' KM' : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="record-detail">${r.oilType}${r.liter ? ' / ' + r.liter + 'L' : ''} @${r.station}</div>
+        <div class="record-amount">$${(r.total||0).toLocaleString()}</div>
+      </div>
+      ${effBadge}
+      ${noteHtml}
+      <div class="record-actions">
+        <button class="btn-edit" onclick="openFuelModal(${i})">✏️ 修改</button>
+        <button class="btn-delete" onclick="confirmDelete('fuel',${i})">🗑️ 刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== FUEL MODAL ==========
+function openFuelModal(idx) {
+  const r = fuelRecords[idx];
+  document.getElementById('editFuelIdx').value = idx;
+  document.getElementById('editFuelDate').value = r.date || '';
+  document.getElementById('editFuelKm').value = r.km || '';
+  document.getElementById('editFuelLiter').value = r.liter || '';
+  document.getElementById('editFuelPrice').value = r.price || '';
+  document.getElementById('editFuelTotal').value = r.total || '';
+  document.getElementById('editFuelNote').value = r.note || '';
+  editFuelStation = r.station || '台灣中油';
+  editFuelOil = r.oilType || '95無鉛';
+  document.querySelectorAll('#editStationGroup .btn-option').forEach(b => {
+    b.classList.toggle('active', b.textContent === editFuelStation);
+  });
+  document.querySelectorAll('#editOilGroup .btn-option').forEach(b => {
+    b.classList.toggle('active', b.textContent === editFuelOil);
+  });
+  document.getElementById('fuelModal').classList.add('open');
+}
+function closeFuelModal() { document.getElementById('fuelModal').classList.remove('open'); }
+function selectEditStation(el, val) {
+  document.querySelectorAll('#editStationGroup .btn-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active'); editFuelStation = val;
+}
+function selectEditOil(el, val) {
+  document.querySelectorAll('#editOilGroup .btn-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active'); editFuelOil = val;
+}
+function confirmEditFuel() {
+  const idx = parseInt(document.getElementById('editFuelIdx').value);
+  fuelRecords[idx] = {
+    date: document.getElementById('editFuelDate').value,
+    km: parseFloat(document.getElementById('editFuelKm').value) || 0,
+    station: editFuelStation,
+    oilType: editFuelOil,
+    liter: parseFloat(document.getElementById('editFuelLiter').value) || 0,
+    price: parseFloat(document.getElementById('editFuelPrice').value) || 0,
+    total: parseFloat(document.getElementById('editFuelTotal').value) || 0,
+    note: document.getElementById('editFuelNote').value
+  };
+  saveData();
+  renderFuel();
+  closeFuelModal();
+}
+
+// ========== MAINT ==========
+let selectedMaintTypes = [];
+function toggleMaintType(el, val) {
+  const idx = selectedMaintTypes.indexOf(val);
+  if (idx >= 0) {
+    selectedMaintTypes.splice(idx, 1);
+    el.classList.remove('active');
+  } else {
+    selectedMaintTypes.push(val);
+    el.classList.add('active');
+  }
+  document.getElementById('maintItem').value = selectedMaintTypes.join('、');
+}
+
+function saveMaint() {
+  const date = document.getElementById('maintDate').value;
+  const km = document.getElementById('maintKm').value;
+  const item = document.getElementById('maintItem').value;
+  const cost = document.getElementById('maintCost').value;
+  const note = document.getElementById('maintNote').value;
+  if (!date || !item || !cost) { alert('請填寫日期、項目和費用'); return; }
+
+  const rec = { date, km: parseFloat(km)||0, item, cost: parseFloat(cost)||0, note };
+
+  const editIdx = document.getElementById('maintCancelEdit').dataset.editIdx;
+  if (editIdx !== undefined && editIdx !== '') {
+    maintRecords[parseInt(editIdx)] = rec;
+    document.getElementById('maintCancelEdit').dataset.editIdx = '';
+    document.getElementById('maintEditBanner').classList.remove('show');
+    document.getElementById('maintCancelEdit').style.display = 'none';
+  } else {
+    maintRecords.unshift(rec);
+  }
+
+  saveData();
+  clearMaintForm();
+  renderMaint();
+}
+
+function clearMaintForm() {
+  document.getElementById('maintKm').value = '';
+  document.getElementById('maintItem').value = '';
+  document.getElementById('maintCost').value = '';
+  document.getElementById('maintNote').value = '';
+  selectedMaintTypes = [];
+  document.querySelectorAll('#maintTypeGroup .btn-option').forEach(b => b.classList.remove('active'));
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('maintDate').value = today;
+}
+
+function cancelMaintEdit() {
+  document.getElementById('maintCancelEdit').dataset.editIdx = '';
+  document.getElementById('maintEditBanner').classList.remove('show');
+  document.getElementById('maintCancelEdit').style.display = 'none';
+  clearMaintForm();
+}
+
+function renderMaint() {
+  const container = document.getElementById('maintRecords');
+  if (maintRecords.length === 0) {
+    container.innerHTML = '<div class="empty-state">尚無保養紀錄</div>';
+    return;
+  }
+  container.innerHTML = maintRecords.map((r, i) => {
+    const noteHtml = r.note ? `<div class="record-note">📝 ${r.note}</div>` : '';
+    return `<div class="record-item">
+      <div class="record-header">
+        <span class="record-date">${r.date}</span>
+        <span class="record-km maint">${r.km ? r.km.toLocaleString() + ' KM' : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="record-detail">${r.item}</div>
+        <div class="record-amount">$${(r.cost||0).toLocaleString()}</div>
+      </div>
+      ${noteHtml}
+      <div class="record-actions">
+        <button class="btn-edit" onclick="openMaintModal(${i})">✏️ 修改</button>
+        <button class="btn-delete" onclick="confirmDelete('maint',${i})">🗑️ 刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== MAINT MODAL ==========
+function openMaintModal(idx) {
+  const r = maintRecords[idx];
+  document.getElementById('editMaintIdx').value = idx;
+  document.getElementById('editMaintDate').value = r.date || '';
+  document.getElementById('editMaintKm').value = r.km || '';
+  document.getElementById('editMaintItem').value = r.item || '';
+  document.getElementById('editMaintCost').value = r.cost || '';
+  document.getElementById('editMaintNote').value = r.note || '';
+  document.getElementById('maintModal').classList.add('open');
+}
+function closeMaintModal() { document.getElementById('maintModal').classList.remove('open'); }
+function confirmEditMaint() {
+  const idx = parseInt(document.getElementById('editMaintIdx').value);
+  maintRecords[idx] = {
+    date: document.getElementById('editMaintDate').value,
+    km: parseFloat(document.getElementById('editMaintKm').value) || 0,
+    item: document.getElementById('editMaintItem').value,
+    cost: parseFloat(document.getElementById('editMaintCost').value) || 0,
+    note: document.getElementById('editMaintNote').value
+  };
+  saveData();
+  renderMaint();
+  closeMaintModal();
+}
+
+// ========== DELETE ==========
+function confirmDelete(type, idx) {
+  pendingDeleteType = type;
+  pendingDeleteIdx = idx;
+  const rec = type === 'fuel' ? fuelRecords[idx] : maintRecords[idx];
+  document.getElementById('confirmMsg').textContent = `確定要刪除 ${rec.date} 的這筆紀錄嗎？此操作無法復原。`;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  pendingDeleteType = null; pendingDeleteIdx = null;
+}
+function doDelete() {
+  if (pendingDeleteType === 'fuel') {
+    fuelRecords.splice(pendingDeleteIdx, 1);
+    saveData(); renderFuel();
+  } else if (pendingDeleteType === 'maint') {
+    maintRecords.splice(pendingDeleteIdx, 1);
+    saveData(); renderMaint();
+  }
+  closeConfirm();
+}
+
+// ========== CSV EXPORT ==========
+function exportCSV() {
+  let rows = [];
+  // Fuel rows
+  fuelRecords.forEach(r => {
+    rows.push(['加油', r.date, r.km, r.station, r.oilType, r.liter, r.price, r.total, '', r.note || '']);
+  });
+  // Blank separator
+  rows.push([]);rows.push([]);
+  // Maint rows
+  maintRecords.forEach(r => {
+    rows.push(['保養', r.date, r.km, r.item, r.cost, r.note || '']);
+  });
+
+  const csvContent = rows.map(row => row.map(cell => {
+    const s = String(cell === undefined || cell === null ? '' : cell);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(',')).join('\n');
+
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '機車小幫手_' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ========== CSV IMPORT ==========
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let text = e.target.result;
+      // Remove BOM
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      
+      const newFuel = [];
+      const newMaint = [];
+
+      lines.forEach(line => {
+        // Simple CSV parse
+        const cols = parseCSVLine(line);
+        if (!cols || cols.length < 2) return;
+        const type = cols[0].trim();
+        if (type === '加油' && cols.length >= 9) {
+          newFuel.push({
+            date: cols[1] || '',
+            km: parseFloat(cols[2]) || 0,
+            station: cols[3] || '',
+            oilType: cols[4] || '',
+            liter: parseFloat(cols[5]) || 0,
+            price: parseFloat(cols[6]) || 0,
+            total: parseFloat(cols[7]) || 0,
+            note: cols[9] || ''
+          });
+        } else if (type === '保養' && cols.length >= 5) {
+          newMaint.push({
+            date: cols[1] || '',
+            km: parseFloat(cols[2]) || 0,
+            item: cols[3] || '',
+            cost: parseFloat(cols[4]) || 0,
+            note: cols[5] || ''
+          });
+        }
+      });
+
+      if (newFuel.length === 0 && newMaint.length === 0) {
+        alert('未能讀取到任何資料，請確認CSV格式正確。');
+        return;
+      }
+
+      if (confirm(`找到 ${newFuel.length} 筆加油紀錄和 ${newMaint.length} 筆保養紀錄。\n是否覆蓋現有資料？`)) {
+        fuelRecords = newFuel;
+        maintRecords = newMaint;
+        saveData();
+        renderFuel();
+        renderMaint();
+        alert('資料已成功匯入！');
+      }
+    } catch(err) {
+      alert('匯入失敗：' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+}
+</script>
+</body>
+</html>
